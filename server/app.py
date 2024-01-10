@@ -23,12 +23,50 @@ def bakeries():
     bakeries = [bakery.to_dict() for bakery in Bakery.query.all()]
     return make_response(  bakeries,   200  )
 
-@app.route('/bakeries/<int:id>')
-def bakery_by_id(id):
+@app.route('/baked_goods', methods=['GET', 'POST'])
+def baked_goods():
+    if request.method == 'GET':
+        baked_goods = [baked_good.to_dict() for baked_good in BakedGood.query.all()]
+        return make_response(baked_goods, 200)
+    
+    elif request.method == 'POST':
+        # Creating a new baked good using form data
+        new_baked_good = BakedGood(
+            name=request.form['name'],
+            price=request.form['price'],
+            bakery_id=request.form['bakery_id']
+        )
+        db.session.add(new_baked_good)
+        db.session.commit()
+        return make_response(jsonify(new_baked_good.to_dict()), 201)  # Returning JSON
 
-    bakery = Bakery.query.filter_by(id=id).first()
-    bakery_serialized = bakery.to_dict()
-    return make_response ( bakery_serialized, 200  )
+@app.route('/bakeries/<int:id>', methods=['GET', 'PATCH'])
+def bakery_by_id(id):
+    bakery = Bakery.query.get_or_404(id)
+
+    if request.method == 'GET':
+        return make_response(jsonify(bakery.to_dict()), 200)
+    
+    elif request.method == 'PATCH':
+        # Updating only the name attribute
+        if 'name' in request.form:
+            bakery.name = request.form['name']
+            db.session.commit()
+        return make_response(jsonify(bakery.to_dict()), 200)
+
+@app.route('/baked_goods/<int:id>', methods=['GET', 'DELETE'])
+def baked_good_by_id(id):
+    baked_good = BakedGood.query.get_or_404(id)
+
+    if request.method == 'GET':
+        return make_response(jsonify(baked_good.to_dict()), 200)
+    
+    elif request.method == 'DELETE':
+        db.session.delete(baked_good)
+        db.session.commit()
+        return make_response(jsonify({'message': 'The record was successfully deleted'}), 200)
+    
+
 
 @app.route('/baked_goods/by_price')
 def baked_goods_by_price():
